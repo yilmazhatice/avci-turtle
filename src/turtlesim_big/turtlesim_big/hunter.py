@@ -1,6 +1,5 @@
 import math
 import random
-
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
@@ -36,24 +35,36 @@ class Hunter(Node):
 
         self.create_timer(1.3, self.kontrol_kurban_yaratma)
 
+
+
     def ana_dongu(self):
         while rclpy.ok():
             rclpy.spin_once(self, timeout_sec=0.05)
             self.avlan()
+
+
+
+
 
     def avlan(self):
         self.kontrol_kurban_olum()
         hedef = self.hedef_sec()
 
         if hedef < 0:
-            self.pub_cmd_vel(0.0, 0.0)  # hedef yoksa dur
+            self.pub_cmd_vel(0.0, 0.0)
             return
         self.kovala(hedef)
+
+
+
 
     def call_kill(self, isim: str):
         istek = Kill.Request()
         istek.name = isim
         self.kill_client.call_async(istek)
+
+
+
 
     def call_spawn(self, isim: str, x: float, y: float):
         istek = Spawn.Request()
@@ -62,6 +73,9 @@ class Hunter(Node):
         istek.y = y
         istek.theta = random.uniform(0.0, 2 * math.pi)
         self.spawn_client.call_async(istek)
+
+
+
 
     def kontrol_kurban_olum(self):
         oldurulecekler: list[Kurban] = []
@@ -73,6 +87,9 @@ class Hunter(Node):
         for oldurulecek in oldurulecekler:
             self.call_kill(oldurulecek.name)
             self.kurbanlar.remove(oldurulecek)
+
+
+
 
     def kontrol_kurban_yaratma(self):
         if len(self.kurbanlar) >= 5:
@@ -86,11 +103,18 @@ class Hunter(Node):
         self.call_spawn(isim, x, y)
         self.kurbanlar.append(Kurban(isim, x, y))
 
+
+
+
     def mesafe_hesapla(self, kurban_index: int) -> float:
         kurban = self.kurbanlar[kurban_index]
         x_farki = kurban.pose.x - self.avci_pose.x
         y_farki = kurban.pose.y - self.avci_pose.y
         return math.sqrt(x_farki ** 2 + y_farki ** 2)
+
+
+
+
 
     def aci_farki_hesapla(self, kurban_index: int) -> float:
         kurban = self.kurbanlar[kurban_index]
@@ -100,13 +124,17 @@ class Hunter(Node):
         kurban_aci = math.atan2(y_farki, x_farki)
         aci_farki = kurban_aci - self.avci_pose.theta
 
-        # Aciyi [-pi, pi] araligina getir
+
         if aci_farki > math.pi:
             aci_farki -= 2 * math.pi
         elif aci_farki < -math.pi:
             aci_farki += 2 * math.pi
 
         return aci_farki
+
+
+
+
 
     def hedef_sec(self) -> int:
         enyakin = 10000.0
@@ -120,6 +148,9 @@ class Hunter(Node):
 
         return hedef
 
+
+
+
     def kovala(self, hedef_index: int):
         mesafe = self.mesafe_hesapla(hedef_index)
         aci_farki = self.aci_farki_hesapla(hedef_index)
@@ -128,6 +159,9 @@ class Hunter(Node):
         acisal_hiz = aci_farki * 3.0
 
         self.pub_cmd_vel(cizgisel_hiz, acisal_hiz)
+
+
+
 
     def pose_cb(self, msg: Pose):
         self.avci_pose = msg
