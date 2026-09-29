@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-package_name = 'turtlesim_big'
+package_name = 'turtle_spawner'
 
 setup(
     name=package_name,
@@ -24,7 +24,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-             'hunter = turtlesim_big.hunter:main',
+             'food_turtle_spawner = turtle_spawner.food_turtle_spawner:main',
         ],
     },
 )

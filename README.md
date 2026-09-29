@@ -1,21 +1,21 @@
 # Turtlesim Avcı
 
 ROS 2 ve Turtlesim ile yapılmış avcı kaplumbağa oyunu.
-Ekranda rastgele kurbanlar doğar, avcı o an en yakın kurbanı kovalayıp yer. 
-Her 10 saniyede bir kurbanlar daha sık ve daha kalabalık doğar.
+Ekranda rastgele kurbanlar doğar, avcı o an en yakın kurbanı kovalayıp yer.
 
+## Paketler
+
+| Paket | Açıklama |
+|---|---|
+| `robot_interfaces` | `FoodState` ve `FoodStateArray` mesajları (kurban adı ve konumu) |
+| `turtle_spawner` | Kurbanları üretir, `/food_turtle_poses` topic'inde yayınlar, `/killed_foods` ile öldürülenleri listeden çıkarır |
+| `turtle_controller` | Avcıyı en yakın kurbana sürer, `kill` servisiyle yer ve `/killed_foods` topic'ine bildirir |
+| `robot_bringup` | Tüm sistemi tek komutla başlatan launch dosyası |
 
 ## Kurulum
 
 ```bash
 source /opt/ros/jazzy/setup.bash
-mkdir -p ~/turtlesim_big/src && cd ~/turtlesim_big/src
-ros2 pkg create turtlesim_big --build-type ament_python --dependencies rclpy turtlesim geometry_msgs --node-name hunter
-```
-
-`hunter.py` kodunu `src/turtlesim_big/turtlesim_big/hunter.py` dosyasına yapıştır, sonra derle:
-
-```bash
 cd ~/turtlesim_big
 colcon build
 source install/setup.bash
@@ -24,22 +24,21 @@ source install/setup.bash
 ## Çalıştırma
 
 ```bash
-# Terminal 1
-ros2 run turtlesim turtlesim_node
+ros2 launch robot_bringup turtle_catch_them_all.launch.xml
+```
 
-# Terminal 2
-source ~/turtlesim_big/install/setup.bash
-ros2 run turtlesim_big hunter
+Node'ları ayrı ayrı çalıştırmak için:
+
+```bash
+ros2 run turtlesim turtlesim_node
+ros2 run turtle_spawner food_turtle_spawner
+ros2 run turtle_controller main_turtle_controller
 ```
 
 ## Ayarlar
 
-Zorluk, `hunter.py` dosyasının en üstündeki sabitlerle değiştirilebilir:
-
-
-| `BASLANGIC_ARALIK` | 2.0 | İlk kurban üretim aralığı (sn) |
-| `EN_KISA_ARALIK` | 0.3 | En hızlı üretim aralığı (sn) |
-| `HIZLANMA_ORANI` | 0.85 | Her seviyede aralığın çarpıldığı oran |
-| `SEVIYE_SURESI` | 10.0 | Seviye atlama süresi (sn) |
-| `EN_FAZLA_KURBAN` | 25 | Ekrandaki en fazla kurban sayısı |
-| `YAKALAMA_MESAFESI` | 0.8 | Avcının kurbanı yeme mesafesi |
+| Değer | Yer | Açıklama |
+|---|---|---|
+| 1.3 sn | `food_turtle_spawner.py` | Kurban üretim aralığı |
+| 5 | `food_turtle_spawner.py` | Ekrandaki en fazla kurban sayısı |
+| 1.0 | `main_turtle_controller.py` | Avcının kurbanı yeme mesafesi |

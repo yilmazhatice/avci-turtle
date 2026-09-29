@@ -1,10 +1,11 @@
 import math
-import random
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
+from std_msgs.msg import String
 from turtlesim.msg import Pose
-from turtlesim.srv import Kill, Spawn
+from turtlesim.srv import Kill
+from robot_interfaces.msg import FoodStateArray
 
 
 class Kurban:
@@ -20,20 +21,16 @@ class Hunter(Node):
         super().__init__("turtle_hunter")
         self.avci_pose: Pose = Pose()
         self.kurbanlar: list[Kurban] = []
-        self.kurban_isim_sayaci = 0
+        self.oldurulenler: set[str] = set()
 
         self.create_subscription(Pose, "turtle1/pose", self.pose_cb, 10)
+        self.create_subscription(FoodStateArray, "food_turtle_poses", self.kurbanlar_cb, 10)
         self.cmd_vel_pubber = self.create_publisher(Twist, "turtle1/cmd_vel", 10)
+        self.oldurulen_pubber = self.create_publisher(String, "killed_foods", 10)
         self.kill_client = self.create_client(Kill, "kill")
-        self.spawn_client = self.create_client(Spawn, "spawn")
 
         while not self.kill_client.wait_for_service(0.5):
             self.get_logger().warn("kill servisi bekleniyor")
-
-        while not self.spawn_client.wait_for_service(0.5):
-            self.get_logger().warn("spawn servisi bekleniyor")
-
-        self.create_timer(1.3, self.kontrol_kurban_yaratma)
 
 
 
@@ -66,17 +63,6 @@ class Hunter(Node):
 
 
 
-    def call_spawn(self, isim: str, x: float, y: float):
-        istek = Spawn.Request()
-        istek.name = isim
-        istek.x = x
-        istek.y = y
-        istek.theta = random.uniform(0.0, 2 * math.pi)
-        self.spawn_client.call_async(istek)
-
-
-
-
     def kontrol_kurban_olum(self):
         oldurulecekler: list[Kurban] = []
         for i in range(len(self.kurbanlar)):
@@ -87,21 +73,23 @@ class Hunter(Node):
         for oldurulecek in oldurulecekler:
             self.call_kill(oldurulecek.name)
             self.kurbanlar.remove(oldurulecek)
+            self.oldurulen_yayinla(oldurulecek.name)
 
 
 
 
-    def kontrol_kurban_yaratma(self):
-        if len(self.kurbanlar) >= 5:
-            return
+    def oldurulen_yayinla(self, isim: str):
+        self.oldurulenler.add(isim)
+        mesaj = String()
+        mesaj.data = isim
+        self.oldurulen_pubber.publish(mesaj)
 
-        self.kurban_isim_sayaci += 1
-        isim = f"kurban{self.kurban_isim_sayaci}"
-        x = random.uniform(1.0, 10.0)
-        y = random.uniform(1.0, 10.0)
-
-        self.call_spawn(isim, x, y)
-        self.kurbanlar.append(Kurban(isim, x, y))
+    def kurbanlar_cb(self, msg: FoodStateArray):
+        self.kurbanlar = [
+            Kurban(food.name, food.pose.position.x, food.pose.position.y)
+            for food in msg.foods
+            if food.name not in self.oldurulenler
+        ]
 
 
 
