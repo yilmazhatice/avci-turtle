@@ -21,11 +21,6 @@ colcon build
 source install/setup.bash
 ```
 
-## Çalıştırma
-
-```bash
-ros2 launch robot_bringup turtle_catch_them_all.launch.xml
-```
 
 Node'ları ayrı ayrı çalıştırmak için:
 
